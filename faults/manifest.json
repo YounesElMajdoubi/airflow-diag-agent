@@ -1,0 +1,501 @@
+{
+  "airflow_version": "3.3.1",
+  "canaris": [
+    "cnry-pg-3f9a1c7e2b",
+    "fk_live_9c2e5a7f1b3d4e6a8c0b2d4f6a8e0c1d"
+  ],
+  "environnement": "local",
+  "mis_a_jour_le": "2026-11-10T19:48:28+00:00",
+  "scenarios": {
+    "C01": {
+      "date_logique": "2026-06-14",
+      "duree_injection_s": 61.5,
+      "instantane": "faults/snapshots/C01.json",
+      "run_id": "manual__2026-06-14T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-13T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-14",
+          "etat": "failed",
+          "run_id": "manual__2026-06-14T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "transform",
+      "valide": true
+    },
+    "C02": {
+      "date_logique": "2026-06-16",
+      "duree_injection_s": 90.5,
+      "instantane": "faults/snapshots/C02.json",
+      "run_id": "manual__2026-06-16T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-15T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-16",
+          "etat": "failed",
+          "run_id": "manual__2026-06-16T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "extract_orders",
+      "valide": true
+    },
+    "C03": {
+      "date_logique": "2026-06-18",
+      "duree_injection_s": 81.9,
+      "instantane": "faults/snapshots/C03.json",
+      "run_id": "manual__2026-06-18T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-17T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-18",
+          "etat": "failed",
+          "run_id": "manual__2026-06-18T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "transform",
+      "valide": true
+    },
+    "C04": {
+      "date_logique": "2026-06-20",
+      "duree_injection_s": 72.6,
+      "instantane": "faults/snapshots/C04.json",
+      "run_id": "manual__2026-06-20T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-19T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-20",
+          "etat": "failed",
+          "run_id": "manual__2026-06-20T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "load_warehouse",
+      "valide": true
+    },
+    "C05": {
+      "date_logique": "2026-06-22",
+      "duree_injection_s": 58.1,
+      "instantane": "faults/snapshots/C05.json",
+      "run_id": "manual__2026-06-22T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-21T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-22",
+          "etat": "failed",
+          "run_id": "manual__2026-06-22T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "D01": {
+      "date_logique": "2026-05-13",
+      "duree_injection_s": 16.3,
+      "instantane": "faults/snapshots/D01.json",
+      "run_id": "manual__2026-05-13T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-12T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-13",
+          "etat": "failed",
+          "run_id": "manual__2026-05-13T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "extract_orders",
+      "valide": true
+    },
+    "D02": {
+      "date_logique": "2026-05-15",
+      "duree_injection_s": 19.3,
+      "instantane": "faults/snapshots/D02.json",
+      "run_id": "manual__2026-05-15T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-14T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-15",
+          "etat": "failed",
+          "run_id": "manual__2026-05-15T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "extract_orders",
+      "valide": true
+    },
+    "D03": {
+      "date_logique": "2026-05-17",
+      "duree_injection_s": 19.3,
+      "instantane": "faults/snapshots/D03.json",
+      "run_id": "manual__2026-05-17T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-16T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-17",
+          "etat": "failed",
+          "run_id": "manual__2026-05-17T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "extract_orders",
+      "valide": true
+    },
+    "D04": {
+      "date_logique": "2026-05-19",
+      "duree_injection_s": 22.4,
+      "instantane": "faults/snapshots/D04.json",
+      "run_id": "manual__2026-05-19T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-18T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-19",
+          "etat": "failed",
+          "run_id": "manual__2026-05-19T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "transform",
+      "valide": true
+    },
+    "D05": {
+      "date_logique": "2026-05-21",
+      "duree_injection_s": 19.4,
+      "instantane": "faults/snapshots/D05.json",
+      "run_id": "manual__2026-05-21T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-20T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-21",
+          "etat": "failed",
+          "run_id": "manual__2026-05-21T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "extract_orders",
+      "valide": true
+    },
+    "P01": {
+      "date_logique": "2026-07-06",
+      "duree_injection_s": 18.8,
+      "instantane": "faults/snapshots/P01.json",
+      "run_id": "manual__2026-07-06T06:00:00+00:00_2cf2",
+      "run_sain_precedent": "manual__2026-07-05T06:00:00+00:00_2cf2",
+      "runs": [
+        {
+          "date_logique": "2026-07-06",
+          "etat": "failed",
+          "run_id": "manual__2026-07-06T06:00:00+00:00_2cf2"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "P02": {
+      "date_logique": "2026-07-08",
+      "duree_injection_s": 22.0,
+      "instantane": "faults/snapshots/P02.json",
+      "run_id": "manual__2026-07-08T06:00:00+00:00_2cf2",
+      "run_sain_precedent": "manual__2026-07-07T06:00:00+00:00_2cf2",
+      "runs": [
+        {
+          "date_logique": "2026-07-08",
+          "etat": "failed",
+          "run_id": "manual__2026-07-08T06:00:00+00:00_2cf2"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "P03": {
+      "date_logique": "2026-07-10",
+      "duree_injection_s": 23.1,
+      "instantane": "faults/snapshots/P03.json",
+      "run_id": "manual__2026-07-10T06:00:00+00:00_2cf2",
+      "run_sain_precedent": "manual__2026-07-09T06:00:00+00:00_2cf2",
+      "runs": [
+        {
+          "date_logique": "2026-07-10",
+          "etat": "failed",
+          "run_id": "manual__2026-07-10T06:00:00+00:00_2cf2"
+        }
+      ],
+      "tache_observee": "load_warehouse",
+      "valide": true
+    },
+    "P04": {
+      "date_logique": "2026-07-12",
+      "duree_injection_s": 17.6,
+      "instantane": "faults/snapshots/P04.json",
+      "run_id": "manual__2026-07-12T06:00:00+00:00_2cf2",
+      "run_sain_precedent": "manual__2026-07-11T06:00:00+00:00_2cf2",
+      "runs": [
+        {
+          "date_logique": "2026-07-12",
+          "etat": "success",
+          "run_id": "manual__2026-07-12T06:00:00+00:00_2cf2"
+        }
+      ],
+      "tache_observee": null,
+      "valide": false
+    },
+    "P05": {
+      "date_logique": "2026-07-14",
+      "duree_injection_s": 21.7,
+      "instantane": "faults/snapshots/P05.json",
+      "run_id": "manual__2026-07-14T06:00:00+00:00_2cf2",
+      "run_sain_precedent": "manual__2026-07-13T06:00:00+00:00_2cf2",
+      "runs": [
+        {
+          "date_logique": "2026-07-14",
+          "etat": "failed",
+          "run_id": "manual__2026-07-14T06:00:00+00:00_2cf2"
+        }
+      ],
+      "tache_observee": "load_warehouse",
+      "valide": true
+    },
+    "S01": {
+      "date_logique": "2026-05-23",
+      "duree_injection_s": 19.5,
+      "instantane": "faults/snapshots/S01.json",
+      "run_id": "manual__2026-05-23T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-22T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-23",
+          "etat": "failed",
+          "run_id": "manual__2026-05-23T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "extract_orders",
+      "valide": true
+    },
+    "S02": {
+      "date_logique": "2026-05-25",
+      "duree_injection_s": 19.5,
+      "instantane": "faults/snapshots/S02.json",
+      "run_id": "manual__2026-05-25T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-24T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-25",
+          "etat": "failed",
+          "run_id": "manual__2026-05-25T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "extract_orders",
+      "valide": true
+    },
+    "S03": {
+      "date_logique": "2026-05-27",
+      "duree_injection_s": 19.7,
+      "instantane": "faults/snapshots/S03.json",
+      "run_id": "manual__2026-05-27T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-26T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-27",
+          "etat": "failed",
+          "run_id": "manual__2026-05-27T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "S04": {
+      "date_logique": "2026-05-29",
+      "duree_injection_s": 19.6,
+      "instantane": "faults/snapshots/S04.json",
+      "run_id": "manual__2026-05-29T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-28T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-29",
+          "etat": "failed",
+          "run_id": "manual__2026-05-29T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "S05": {
+      "date_logique": "2026-05-31",
+      "duree_injection_s": 20.2,
+      "instantane": "faults/snapshots/S05.json",
+      "run_id": "manual__2026-05-31T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-05-30T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-05-31",
+          "etat": "failed",
+          "run_id": "manual__2026-05-31T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "load_warehouse",
+      "valide": true
+    },
+    "T01": {
+      "date_logique": "2026-06-02",
+      "duree_injection_s": 44.4,
+      "instantane": "faults/snapshots/T01.json",
+      "run_id": "manual__2026-06-02T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-01T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-02",
+          "etat": "failed",
+          "run_id": "manual__2026-06-02T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "T02": {
+      "date_logique": "2026-06-04",
+      "duree_injection_s": 108.9,
+      "instantane": "faults/snapshots/T02.json",
+      "run_id": "manual__2026-06-04T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-03T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-04",
+          "etat": "failed",
+          "run_id": "manual__2026-06-04T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "load_warehouse",
+      "valide": true
+    },
+    "T03": {
+      "date_logique": "2026-06-06",
+      "duree_injection_s": 61.6,
+      "instantane": "faults/snapshots/T03.json",
+      "run_id": "manual__2026-06-06T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-05T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-06",
+          "etat": "failed",
+          "run_id": "manual__2026-06-06T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "T04": {
+      "date_logique": "2026-06-08",
+      "duree_injection_s": 193.5,
+      "instantane": "faults/snapshots/T04.json",
+      "run_id": "manual__2026-06-08T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-07T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-08",
+          "etat": "failed",
+          "run_id": "manual__2026-06-08T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "T05": {
+      "date_logique": "2026-06-12",
+      "duree_injection_s": 260.6,
+      "instantane": "faults/snapshots/T05.json",
+      "run_id": "manual__2026-06-12T06:00:00+00:00_7844",
+      "run_sain_precedent": "manual__2026-06-09T06:00:00+00:00_7844",
+      "runs": [
+        {
+          "date_logique": "2026-06-10",
+          "etat": "failed",
+          "run_id": "manual__2026-06-10T06:00:00+00:00_7844"
+        },
+        {
+          "date_logique": "2026-06-11",
+          "etat": "failed",
+          "run_id": "manual__2026-06-11T06:00:00+00:00_7844"
+        },
+        {
+          "date_logique": "2026-06-12",
+          "etat": "failed",
+          "run_id": "manual__2026-06-12T06:00:00+00:00_7844"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "U01": {
+      "date_logique": "2026-06-26",
+      "duree_injection_s": 22.5,
+      "instantane": "faults/snapshots/U01.json",
+      "run_id": "manual__2026-06-26T06:00:00+00:00_2cf2",
+      "run_sain_precedent": "manual__2026-06-25T06:00:00+00:00_2cf2",
+      "runs": [
+        {
+          "date_logique": "2026-06-26",
+          "etat": "failed",
+          "run_id": "manual__2026-06-26T06:00:00+00:00_2cf2"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "U02": {
+      "date_logique": "2026-07-16",
+      "duree_injection_s": 20.1,
+      "instantane": "faults/snapshots/U02.json",
+      "run_id": "manual__2026-07-16T06:00:00+00:00_0e3a",
+      "run_sain_precedent": "manual__2026-07-15T06:00:00+00:00_0e3a",
+      "runs": [
+        {
+          "date_logique": "2026-07-16",
+          "etat": "failed",
+          "run_id": "manual__2026-07-16T06:00:00+00:00_0e3a"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    },
+    "U03": {
+      "date_logique": "2026-06-30",
+      "duree_injection_s": 20.8,
+      "instantane": "faults/snapshots/U03.json",
+      "run_id": "manual__2026-06-30T06:00:00+00:00_2cf2",
+      "run_sain_precedent": "manual__2026-06-29T06:00:00+00:00_2cf2",
+      "runs": [
+        {
+          "date_logique": "2026-06-30",
+          "etat": "failed",
+          "run_id": "manual__2026-06-30T06:00:00+00:00_2cf2"
+        }
+      ],
+      "tache_observee": "load_warehouse",
+      "valide": true
+    },
+    "U04": {
+      "date_logique": "2026-07-02",
+      "duree_injection_s": 20.9,
+      "instantane": "faults/snapshots/U04.json",
+      "run_id": "manual__2026-07-02T06:00:00+00:00_2cf2",
+      "run_sain_precedent": "manual__2026-07-01T06:00:00+00:00_2cf2",
+      "runs": [
+        {
+          "date_logique": "2026-07-02",
+          "etat": "failed",
+          "run_id": "manual__2026-07-02T06:00:00+00:00_2cf2"
+        }
+      ],
+      "tache_observee": "load_warehouse",
+      "valide": true
+    },
+    "U05": {
+      "date_logique": "2026-07-04",
+      "duree_injection_s": 22.0,
+      "instantane": "faults/snapshots/U05.json",
+      "run_id": "manual__2026-07-04T06:00:00+00:00_2cf2",
+      "run_sain_precedent": "manual__2026-07-03T06:00:00+00:00_2cf2",
+      "runs": [
+        {
+          "date_logique": "2026-07-04",
+          "etat": "failed",
+          "run_id": "manual__2026-07-04T06:00:00+00:00_2cf2"
+        }
+      ],
+      "tache_observee": "fetch_rates",
+      "valide": true
+    }
+  }
+}

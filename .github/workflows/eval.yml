@@ -1,0 +1,59 @@
+name: tests-et-evaluation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Tests (sans réseau, faux modèles)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+  eval-courte:
+    name: Évaluation courte (vrai modèle, échoue si l'exactitude baisse)
+    needs: tests
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.DEEPSEEK_API_KEY != '' }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      LITELLM_MASTER_KEY: sk-ci-ephemere
+      LITELLM_URL: http://localhost:4000
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pas de clé DeepSeek -> étape ignorée
+        if: env.HAS_KEY != 'true'
+        run: echo "::notice::Secret DEEPSEEK_API_KEY absent (ex. PR depuis un fork) : évaluation courte ignorée."
+      - uses: actions/setup-python@v5
+        if: env.HAS_KEY == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Installation
+        if: env.HAS_KEY == 'true'
+        run: pip install -e ".[eval]" "litellm[proxy]==1.108.4"
+      - name: Proxy LiteLLM (même config que la pile docker)
+        if: env.HAS_KEY == 'true'
+        run: |
+          litellm --config litellm/config.yaml --port 4000 > litellm.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:4000/health/liveliness && break; sleep 2; done
+      - name: Évaluation courte sur les instantanés versionnés
+        if: env.HAS_KEY == 'true'
+        run: python -m eval.ci_eval --out ci-resultats.json
+      - name: Artefacts
+        if: always() && env.HAS_KEY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-courte
+          path: |
+            ci-resultats.json
+            litellm.log

@@ -1,0 +1,275 @@
+# Jeu de 30 pannes étiquetées pour le DAG cobaye_ventes.
+#
+# Chaque panne est provoquée DE L'EXTÉRIEUR du code (fichier, API, base, variable Airflow),
+# sauf les erreurs de code, qui modifient réellement le fichier du DAG (le source montré à
+# l'agent est donc le source fautif, comme en vrai).
+#
+# Champs :
+#   categorie       vérité terrain (6 classes)
+#   cause_reelle    ce qu'un bon diagnostic doit identifier (sert au LLM juge)
+#   tache_attendue  la tâche qui doit échouer en premier
+#   touche_donnees  la correction exige d'agir sur des données (redéposer, corriger, migrer)
+#   recidive        nombre d'exécutions consécutives en échec (la dernière est diagnostiquée)
+#   ci              fait partie du sous-ensemble court rejoué en CI
+#   injection       actions appliquées avant l'exécution (vocabulaire : voir faults/inject.py)
+#
+# L'escalade attendue n'est PAS écrite à la main : elle est calculée par la politique
+# de faults/catalog.py à partir de categorie / touche_donnees / recidive (une seule source de vérité).
+
+- id: D01
+  titre: "Fichier de commandes non déposé"
+  categorie: donnee_manquante
+  cause_reelle: "Le fichier orders_<date>.csv n'a pas été déposé dans data/incoming ; extract_orders lève FileNotFoundError à l'ouverture."
+  tache_attendue: extract_orders
+  touche_donnees: true
+  ci: true
+  injection: [{orders: missing}]
+
+- id: D02
+  titre: "Fichier de commandes vide (0 octet)"
+  categorie: donnee_manquante
+  cause_reelle: "Le fichier de commandes du jour est vide (0 octet, pas même l'en-tête) ; extract_orders lève « Fichier … vide : aucune ligne d'en-tête »."
+  tache_attendue: extract_orders
+  touche_donnees: true
+  injection: [{orders: empty}]
+
+- id: D03
+  titre: "Fichier sans aucune commande"
+  categorie: donnee_manquante
+  cause_reelle: "Le fichier de commandes ne contient que la ligne d'en-tête, aucune commande ; extract_orders lève « sans aucune commande »."
+  tache_attendue: extract_orders
+  touche_donnees: true
+  injection: [{orders: header_only}]
+
+- id: D04
+  titre: "L'API ne renvoie aucun taux"
+  categorie: donnee_manquante
+  cause_reelle: "L'API fournisseur répond 200 mais avec une liste de taux vide ; transform ne trouve aucun taux pour la devise des commandes (« Aucun taux de change pour la devise … »)."
+  tache_attendue: transform
+  touche_donnees: true
+  ci: true
+  injection: [{api: empty}]
+
+- id: D05
+  titre: "Montants manquants dans le fichier"
+  categorie: donnee_manquante
+  cause_reelle: "Certaines commandes du fichier ont un montant vide ; extract_orders lève « Montant manquant à la ligne N »."
+  tache_attendue: extract_orders
+  touche_donnees: true
+  injection: [{orders: null_amount}]
+
+- id: S01
+  titre: "Colonne amount renommée en montant"
+  categorie: schema_modifie
+  cause_reelle: "Dans le fichier CSV, la colonne amount a été renommée montant ; extract_orders lève KeyError 'amount' (la ligne « Colonnes trouvées » montre la nouvelle en-tête)."
+  tache_attendue: extract_orders
+  touche_donnees: false
+  ci: true
+  injection: [{orders: rename_amount}]
+
+- id: S02
+  titre: "Format de date changé dans le fichier"
+  categorie: schema_modifie
+  cause_reelle: "Les dates du fichier sont passées au format JJ/MM/AAAA au lieu de AAAA-MM-JJ ; strptime lève ValueError « does not match format '%Y-%m-%d' »."
+  tache_attendue: extract_orders
+  touche_donnees: false
+  injection: [{orders: date_format}]
+
+- id: S03
+  titre: "Champ rate renommé value dans l'API"
+  categorie: schema_modifie
+  cause_reelle: "L'API fournisseur renvoie désormais le champ value au lieu de rate pour chaque taux ; fetch_rates lève KeyError 'rate'."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  ci: true
+  injection: [{api: rename_field}]
+
+- id: S04
+  titre: "Structure des taux changée (objet au lieu de liste)"
+  categorie: schema_modifie
+  cause_reelle: "L'API renvoie rates sous forme d'objet {devise: taux} au lieu d'une liste d'objets ; l'itération donne des chaînes et fetch_rates lève TypeError « string indices must be integers »."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  injection: [{api: dict_rates}]
+
+- id: S05
+  titre: "Colonne de la table cible renommée"
+  categorie: schema_modifie
+  cause_reelle: "Dans l'entrepôt, la colonne ventes.fact_sales.amount_eur a été renommée amount_euro ; l'INSERT de load_warehouse échoue (UndefinedColumn : la colonne amount_eur n'existe pas)."
+  tache_attendue: load_warehouse
+  touche_donnees: true
+  injection: [{sql: "ALTER TABLE ventes.fact_sales RENAME COLUMN amount_eur TO amount_euro"}]
+
+- id: T01
+  titre: "API fournisseur trop lente"
+  categorie: delai_depasse
+  cause_reelle: "L'API fournisseur met environ 40 s à répondre, au-delà du timeout de lecture de 10 s de requests ; fetch_rates lève ReadTimeout."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  ci: true
+  injection: [{api: slow, params: {seconds: 40}}]
+
+- id: T02
+  titre: "Table verrouillée, statement_timeout atteint"
+  categorie: delai_depasse
+  cause_reelle: "Une autre session tient un verrou exclusif sur ventes.fact_sales ; le DELETE de load_warehouse attend et est annulé par statement_timeout (15 s), QueryCanceled."
+  tache_attendue: load_warehouse
+  touche_donnees: false
+  injection: [{sql_lock: 120}]
+
+- id: T03
+  titre: "Timeout abaissé dans la configuration"
+  categorie: delai_depasse
+  cause_reelle: "La variable Airflow fournisseur_timeout_s a été abaissée à 2 s alors que l'API répond en 6 s ; fetch_rates lève ReadTimeout (read timeout=2.0)."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  injection: [{variable: {fournisseur_timeout_s: "2"}}, {api: slow, params: {seconds: 6}}]
+
+- id: T04
+  titre: "Réponse au goutte-à-goutte, execution_timeout Airflow"
+  categorie: delai_depasse
+  cause_reelle: "L'API envoie sa réponse octet par octet pendant 90 s ; le timeout de requests n'est jamais atteint mais l'execution_timeout de 60 s de la tâche l'est ; Airflow tue fetch_rates (AirflowTaskTimeout)."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  ci: true
+  injection: [{api: trickle, params: {seconds: 90}}]
+
+- id: T05
+  titre: "Lenteur de l'API qui se répète"
+  categorie: delai_depasse
+  cause_reelle: "L'API fournisseur répond en environ 40 s depuis plusieurs exécutions (3 échecs consécutifs de fetch_rates par ReadTimeout) ; le problème est persistant côté fournisseur."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  recidive: 3
+  injection: [{api: slow, params: {seconds: 40}}]
+
+- id: C01
+  titre: "Variable non définie (faute de frappe)"
+  categorie: erreur_code
+  cause_reelle: "Dans transform, le code utilise la variable taux au lieu de rate ; NameError « name 'taux' is not defined »."
+  tache_attendue: transform
+  touche_donnees: false
+  ci: true
+  injection:
+    - patch_dag: [{find: 'round(o["amount"] * rate, 2)', replace: 'round(o["amount"] * taux, 2)'}]
+
+- id: C02
+  titre: "Conversion int() sur des montants décimaux"
+  categorie: erreur_code
+  cause_reelle: "extract_orders convertit le montant avec int() au lieu de float() ; les montants décimaux (ex. '12.50') provoquent ValueError « invalid literal for int() »."
+  tache_attendue: extract_orders
+  touche_donnees: false
+  injection:
+    - patch_dag: [{find: '"amount": float(row["amount"]),', replace: '"amount": int(row["amount"]),'}]
+
+- id: C03
+  titre: "Mauvaise clé de dictionnaire dans transform"
+  categorie: erreur_code
+  cause_reelle: "transform lit o[\"devise\"] alors que extract_orders produit la clé currency ; KeyError 'devise'. Les données sont conformes, c'est le code qui est incohérent."
+  tache_attendue: transform
+  touche_donnees: false
+  ci: true
+  injection:
+    - patch_dag: [{find: 'rate = rates.get(o["currency"])', replace: 'rate = rates.get(o["devise"])'}]
+
+- id: C04
+  titre: "Requête SQL avec un paramètre manquant"
+  categorie: erreur_code
+  cause_reelle: "L'INSERT de load_warehouse n'a que 4 marqueurs %s pour 5 valeurs ; psycopg2 lève TypeError « not all arguments converted during string formatting »."
+  tache_attendue: load_warehouse
+  touche_donnees: false
+  injection:
+    - patch_dag: [{find: '"VALUES (%s, %s, %s, %s, %s)"', replace: '"VALUES (%s, %s, %s, %s)"'}]
+
+- id: C05
+  titre: "Accès attribut au lieu de clé"
+  categorie: erreur_code
+  cause_reelle: "fetch_rates écrit payload.rates au lieu de payload[\"rates\"] ; AttributeError « 'dict' object has no attribute 'rates' »."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  injection:
+    - patch_dag: [{find: 'for r in payload["rates"]}', replace: 'for r in payload.rates}'}]
+
+- id: U01
+  titre: "API fournisseur en maintenance (503)"
+  categorie: dependance_indisponible
+  cause_reelle: "L'API fournisseur répond 503 Service Unavailable (maintenance) ; raise_for_status lève HTTPError dans fetch_rates."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  ci: true
+  injection: [{api: down}]
+
+- id: U02
+  titre: "Service fournisseur arrêté"
+  categorie: dependance_indisponible
+  cause_reelle: "Le service de l'API fournisseur est arrêté ; fetch_rates ne peut pas se connecter (ConnectionError : hôte introuvable ou connexion refusée)."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  injection: [{stop: fournisseur}]
+
+- id: U03
+  titre: "Entrepôt Postgres arrêté"
+  categorie: dependance_indisponible
+  cause_reelle: "Le serveur Postgres de l'entrepôt est arrêté ; psycopg2.connect échoue dans load_warehouse (OperationalError : hôte introuvable ou connexion refusée)."
+  tache_attendue: load_warehouse
+  touche_donnees: false
+  ci: true
+  injection: [{stop: entrepot}]
+
+- id: U04
+  titre: "Base de l'entrepôt fermée aux connexions"
+  categorie: dependance_indisponible
+  cause_reelle: "La base dwh a été fermée aux connexions (ALLOW_CONNECTIONS false, maintenance) ; load_warehouse échoue avec OperationalError « database \"dwh\" is not currently accepting connections »."
+  tache_attendue: load_warehouse
+  touche_donnees: false
+  injection: [{sql_db: postgres, sql: "ALTER DATABASE dwh ALLOW_CONNECTIONS false"}]
+
+- id: U05
+  titre: "Connexion coupée par l'API"
+  categorie: dependance_indisponible
+  cause_reelle: "Le serveur de l'API fournisseur ferme la connexion sans répondre ; fetch_rates lève ConnectionError (connection reset / remote end closed connection)."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  injection: [{api: reset}]
+
+- id: P01
+  titre: "Clé d'API refusée (401)"
+  categorie: droits_insuffisants
+  cause_reelle: "Le fournisseur refuse la clé d'API (401 invalid_api_key, clé révoquée ou changée) ; raise_for_status lève HTTPError 401 dans fetch_rates."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  ci: true
+  injection: [{api: unauthorized}]
+
+- id: P02
+  titre: "Endpoint hors abonnement (403)"
+  categorie: droits_insuffisants
+  cause_reelle: "Le fournisseur répond 403 Forbidden, l'abonnement n'inclut plus l'endpoint /v1/rates ; raise_for_status lève HTTPError 403 dans fetch_rates."
+  tache_attendue: fetch_rates
+  touche_donnees: false
+  injection: [{api: forbidden}]
+
+- id: P03
+  titre: "Droit INSERT retiré sur la table"
+  categorie: droits_insuffisants
+  cause_reelle: "Le rôle etl_writer a perdu le droit INSERT sur ventes.fact_sales ; load_warehouse échoue avec InsufficientPrivilege « permission denied for table fact_sales »."
+  tache_attendue: load_warehouse
+  touche_donnees: false
+  ci: true
+  injection: [{sql: "REVOKE INSERT ON ventes.fact_sales FROM etl_writer"}]
+
+- id: P04
+  titre: "Dossier des rapports en lecture seule"
+  categorie: droits_insuffisants
+  cause_reelle: "Le dossier data/reports n'est plus accessible en écriture (droits 555) ; publish_report lève PermissionError [Errno 13] à l'écriture du rapport."
+  tache_attendue: publish_report
+  touche_donnees: false
+  injection: [{chmod_reports: "555"}]
+
+- id: P05
+  titre: "Rôle de connexion désactivé"
+  categorie: droits_insuffisants
+  cause_reelle: "Le rôle Postgres etl_writer n'a plus le droit de se connecter (NOLOGIN) ; load_warehouse échoue avec « role \"etl_writer\" is not permitted to log in »."
+  tache_attendue: load_warehouse
+  touche_donnees: false
+  injection: [{sql: "ALTER ROLE etl_writer NOLOGIN"}]

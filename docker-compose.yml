@@ -1,0 +1,235 @@
+# Pile complète du projet. Démarrage : `make up` (voir README).
+#
+#   Airflow 3.3.1 (LocalExecutor)       http://localhost:8080   pipeline cobaye + API REST
+#   fournisseur (API simulée)           http://localhost:8000   pannes pilotées par /admin/mode
+#   entrepot (Postgres 16)              interne                 cible du pipeline
+#   mcp-server                          http://localhost:8765/mcp  4 outils en lecture seule
+#   litellm (passerelle modèles)        http://localhost:4000
+#   ollama (modèle local)               http://localhost:11434
+#   mlflow (suivi des évaluations)      http://localhost:5000
+#
+# Adapté du docker-compose officiel d'Airflow 3.3.1 : LocalExecutor au lieu de Celery
+# (pas de Redis ni de worker : moins de mémoire, les tâches tournent dans le scheduler).
+
+x-airflow-common: &airflow-common
+  build: ./airflow
+  image: diag-airflow:3.3.1
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY:-}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:-change-me-jwt-secret}
+    AIRFLOW__API_AUTH__JWT_ISSUER: airflow
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+    # Relecture rapide des DAG : les pannes « erreur de code » modifient le fichier du DAG
+    AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "5"
+    AIRFLOW__DAG_PROCESSOR__MIN_FILE_PROCESS_INTERVAL: "5"
+    # Environnement du pipeline cobaye (valeurs CANARI : fausses, mais placées où un vrai secret fuirait)
+    PIPELINE_DATA_DIR: /opt/airflow/data
+    FOURNISSEUR_URL: http://fournisseur:8000
+    FOURNISSEUR_API_KEY: ${FOURNISSEUR_API_KEY}
+    ENTREPOT_DSN: postgresql://etl_writer:${ENTREPOT_PASSWORD}@entrepot:5432/dwh
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - airflow-logs:/opt/airflow/logs
+    - pipeline-data:/opt/airflow/data
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on: &airflow-depends
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command: ["/opt/airflow/init.sh"]
+    environment:
+      <<: *airflow-env
+      _AIRFLOW_DB_MIGRATE: "true"
+      _AIRFLOW_WWW_USER_CREATE: "true"
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-airflow}
+      DIAG_READER_PASSWORD: ${AIRFLOW_READER_PASSWORD}
+    user: "0:0"
+
+  airflow-apiserver:
+    <<: *airflow-common
+    command: api-server
+    ports: ["8080:8080"]
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-depends
+      airflow-init: {condition: service_completed_successfully}
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-depends
+      airflow-init: {condition: service_completed_successfully}
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: dag-processor
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-depends
+      airflow-init: {condition: service_completed_successfully}
+
+  entrepot:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${ENTREPOT_ADMIN_PASSWORD}
+      POSTGRES_DB: dwh
+      ENTREPOT_PASSWORD: ${ENTREPOT_PASSWORD}
+    volumes:
+      - entrepot-db:/var/lib/postgresql/data
+      - ./services/entrepot/init-role.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+      - ./services/entrepot:/sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "dwh"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  fournisseur:
+    build: ./services/fournisseur
+    environment:
+      FOURNISSEUR_API_KEY: ${FOURNISSEUR_API_KEY}
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  mcp-server:
+    build: .
+    image: diag-agent:latest
+    command: ["python", "-m", "mcp_server.server", "--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8765"]
+    environment:
+      AIRFLOW_API_URL: http://airflow-apiserver:8080
+      AIRFLOW_USERNAME: diag_reader            # compte Airflow « Viewer » : lecture seule
+      AIRFLOW_PASSWORD: ${AIRFLOW_READER_PASSWORD}
+      MCP_ALLOWED_HOSTS: "localhost:*,127.0.0.1:*,mcp-server:*"
+    ports: ["8765:8765"]
+    depends_on:
+      airflow-apiserver: {condition: service_healthy}
+    restart: unless-stopped
+
+  litellm:
+    build: ./litellm
+    command: ["litellm", "--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      OLLAMA_API_BASE: ${OLLAMA_API_BASE:-http://ollama:11434}
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"   # prix = table de la version épinglée (coûts reproductibles)
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml:ro
+    ports: ["4000:4000"]
+    restart: unless-stopped
+
+  # Modèle local : optionnel (profil « local »), car il demande ~6 Go de RAM. `make up-local` l'active.
+  ollama:
+    image: ollama/ollama:${OLLAMA_VERSION:-latest}
+    profiles: ["local"]
+    volumes:
+      - ollama-models:/root/.ollama
+    ports: ["11434:11434"]
+    restart: unless-stopped
+    # Avec un GPU NVIDIA, décommenter :
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+
+  ollama-pull:
+    image: ollama/ollama:${OLLAMA_VERSION:-latest}
+    profiles: ["local"]
+    entrypoint: ["ollama", "pull", "${OLLAMA_MODEL:-qwen2.5:7b-instruct}"]
+    environment:
+      OLLAMA_HOST: ollama:11434
+    depends_on: [ollama]
+    restart: "no"
+
+  mlflow:
+    build: ./mlflow
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000 --workers 1
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --artifacts-destination /mlflow/artifacts
+      --allowed-hosts "${MLFLOW_ALLOWED_HOSTS:-localhost:*,127.0.0.1:*,mlflow:*,*.app.github.dev}"
+    environment:
+      # Tâches de fond de MLflow 3 (scoring en ligne, archivage de traces) : inutiles ici, et gourmandes
+      MLFLOW_SERVER_ENABLE_JOB_EXECUTION: "false"
+    volumes:
+      - mlflow-data:/mlflow
+    ports: ["5000:5000"]
+    restart: unless-stopped
+
+  # Outils lancés à la demande : docker compose run --rm agent python -m agent.cli ...
+  agent:
+    image: diag-agent:latest
+    profiles: ["outils"]
+    working_dir: /app
+    environment:
+      LITELLM_URL: http://litellm:4000
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      AIRFLOW_API_URL: http://airflow-apiserver:8080
+      AIRFLOW_USERNAME: diag_reader
+      AIRFLOW_PASSWORD: ${AIRFLOW_READER_PASSWORD}
+      FOURNISSEUR_API_KEY: ${FOURNISSEUR_API_KEY}
+      ENTREPOT_PASSWORD: ${ENTREPOT_PASSWORD}
+    volumes:
+      - .:/app
+    depends_on: [litellm, mlflow, mcp-server]
+
+volumes:
+  airflow-db:
+  airflow-logs:
+  pipeline-data:
+  entrepot-db:
+  ollama-models:
+  mlflow-data:

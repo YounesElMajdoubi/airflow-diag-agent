@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airflow-diag-agent"
+version = "0.1.0"
+description = "Agent IA de diagnostic de pipelines Airflow via MCP, LiteLLM et MLflow"
+readme = "README.md"
+requires-python = ">=3.11"
+# Versions exactes : celles avec lesquelles le projet a été testé.
+dependencies = [
+    "mcp==2.3.0",
+    "langgraph==1.2.20",
+    "httpx==0.28.1",
+    "pydantic==2.14.3",
+    "PyYAML==6.0.3",
+]
+
+[project.optional-dependencies]
+eval = ["mlflow==3.18.0"]
+dev = ["pytest==9.2.0"]
+
+[tool.setuptools.packages.find]
+include = ["mcp_server*", "agent*", "eval*", "faults*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

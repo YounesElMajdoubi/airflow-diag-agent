@@ -1,0 +1,20 @@
+# Configurations comparées. Les noms de modèles sont des alias de litellm/config.yaml.
+experiment: diagnostic-airflow
+juge: juge
+
+configurations:
+  # 1) gros modèle seul
+  gros-deepseek-pro:        {strategie: gros, gros: deepseek-pro}
+  gros-mistral-large:       {strategie: gros, gros: mistral-large}
+  # 2) petit modèle seul (dont local)
+  petit-mistral-small:      {strategie: petit, petit: mistral-small}
+  petit-deepseek-flash:     {strategie: petit, petit: deepseek-flash}
+  petit-local:              {strategie: petit, petit: local}
+  # 3) routage : le petit classe, le gros reprend les cas difficiles
+  routage-mistral-small-deepseek-pro: {strategie: routage, petit: mistral-small, gros: deepseek-pro}
+  routage-local-deepseek-pro:         {strategie: routage, petit: local, gros: deepseek-pro}
+
+# Évaluation courte rejouée par GitHub Actions à chaque modification (scénarios marqués ci: true).
+ci:
+  configuration: petit-deepseek-flash
+  juge: false      # la CI ne vérifie que l'exactitude : pas besoin du juge (coût, durée)

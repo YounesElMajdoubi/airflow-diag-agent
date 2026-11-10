@@ -1,0 +1,48 @@
+# Passerelle LiteLLM : l'agent n'appelle que des ALIAS ; ce fichier dit où ils pointent.
+# Les identifiants de modèles ont été vérifiés dans la table de prix de LiteLLM 1.108.4
+# (deepseek-flash, deepseek-v4-pro, mistral-small-latest, mistral-large-latest).
+# Coûts : LiteLLM calcule le coût de chaque appel à partir de cette table et le renvoie
+# dans l'en-tête x-litellm-response-cost. Pour DeepSeek, c'est le tarif plein : le tarif
+# « heures creuses » réellement facturé peut être deux fois plus bas.
+
+model_list:
+  # --- gros modèles
+  - model_name: deepseek-pro
+    litellm_params:
+      model: deepseek/deepseek-v4-pro
+      api_key: os.environ/DEEPSEEK_API_KEY
+  - model_name: mistral-large
+    litellm_params:
+      model: mistral/mistral-large-latest
+      api_key: os.environ/MISTRAL_API_KEY
+
+  # --- petits modèles
+  - model_name: deepseek-flash
+    litellm_params:
+      model: deepseek/deepseek-flash
+      api_key: os.environ/DEEPSEEK_API_KEY
+  - model_name: mistral-small
+    litellm_params:
+      model: mistral/mistral-small-latest
+      api_key: os.environ/MISTRAL_API_KEY
+  - model_name: local
+    litellm_params:
+      model: ollama_chat/qwen2.5:7b-instruct
+      api_base: os.environ/OLLAMA_API_BASE
+    model_info:
+      input_cost_per_token: 0      # modèle local : pas de facture (le coût matériel n'est pas compté)
+      output_cost_per_token: 0
+
+  # --- juge de l'évaluation (alias séparé : son coût n'est pas mélangé à celui de l'agent)
+  - model_name: juge
+    litellm_params:
+      model: deepseek/deepseek-v4-pro
+      api_key: os.environ/DEEPSEEK_API_KEY
+
+litellm_settings:
+  drop_params: true        # ignore les paramètres non supportés par un fournisseur au lieu d'échouer
+  request_timeout: 180
+  num_retries: 2           # erreurs réseau / 429 : LiteLLM réessaie (compté dans la durée mesurée)
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
