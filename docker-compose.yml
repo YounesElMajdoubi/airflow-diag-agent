@@ -69,6 +69,7 @@ services:
       _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-airflow}
       DIAG_READER_PASSWORD: ${AIRFLOW_READER_PASSWORD}
+      AIRFLOW_UID: ${AIRFLOW_UID:-50000}   # pour que init.sh donne les dossiers au bon utilisateur
     user: "0:0"
 
   airflow-apiserver:

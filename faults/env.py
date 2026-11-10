@@ -68,13 +68,13 @@ class DockerEnv:
 
     def write_data(self, rel, content):
         path = f"/opt/airflow/data/{rel}"
-        self._exec("airflow-scheduler", ["sh", "-c", f"mkdir -p \"$(dirname {path})\" && cat > {path}"], content)
+        self._exec("airflow-scheduler", ["sh", "-c", f"mkdir -p \"$(dirname {path})\" && cat > {path} && chmod 644 {path}"], content, user="0")
 
     def delete_data(self, rel):
-        self._exec("airflow-scheduler", ["rm", "-f", f"/opt/airflow/data/{rel}"])
+        self._exec("airflow-scheduler", ["rm", "-f", f"/opt/airflow/data/{rel}"], user="0")
 
     def chmod_data(self, rel, mode):
-        self._exec("airflow-scheduler", ["sh", "-c", f"mkdir -p /opt/airflow/data/{rel} && chmod {mode} /opt/airflow/data/{rel}"])
+        self._exec("airflow-scheduler", ["sh", "-c", f"mkdir -p /opt/airflow/data/{rel} && chmod {mode} /opt/airflow/data/{rel}"], user="0")
 
     def sql(self, sql, db="dwh"):
         self._exec("entrepot", ["psql", "-U", "postgres", "-d", db, "-v", "ON_ERROR_STOP=1", "-q", "-f", "-"], sql.encode())
