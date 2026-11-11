@@ -28,7 +28,17 @@ des campagnes réellement exécutées (les campagnes au faux modèle de test son
 Aucun chiffre n'est écrit à la main.
 
 <!-- RESULTATS:DEBUT -->
-_Aucune campagne réelle complète pour l'instant : lancer `make eval` (voir plus bas)._
+| Stratégie | Configuration | Exactitude | Justesse diag. (juge) | Escalades correctes | Coût / diagnostic | Durée moy. | Fuites | n | Run MLflow |
+|---|---|---|---|---|---|---|---|---|---|
+| gros | gros-deepseek-pro | 97 % [83–99] | 92 % | 93 % | 0.01870 $ | 46.7 s | 0 | 30 | `a2cf5e1d` |
+| petit | petit-deepseek-flash | 97 % [83–99] | 95 % | 97 % | 0.00330 $ | 18.2 s | 0 | 30 | `c1a2bab4` |
+| routage | routage-deepseek-flash-deepseek-pro | 97 % [83–99] | 95 % | 90 % | 0.00390 $ | 21.7 s | 0 | 30 | `097b85c2` |
+
+_Vérification manuelle du juge : pas encore faite (`make verif-juge`)._
+
+Exactitude : entre crochets, intervalle de confiance à 95 % (Wilson). Avec 30 pannes, deux configurations dont les intervalles se chevauchent largement ne sont pas départagées.
+
+_Tableau généré depuis MLflow le 2026-11-11 01:32 UTC par `eval/make_results_table.py` ; ne pas modifier à la main._
 <!-- RESULTATS:FIN -->
 
 Définitions :

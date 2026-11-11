@@ -13,6 +13,7 @@ configurations:
   # 3) routage : le petit classe, le gros reprend les cas difficiles
   routage-mistral-small-deepseek-pro: {strategie: routage, petit: mistral-small, gros: deepseek-pro}
   routage-local-deepseek-pro:         {strategie: routage, petit: local, gros: deepseek-pro}
+  routage-deepseek-flash-deepseek-pro: {strategie: routage, petit: deepseek-flash, gros: deepseek-pro}
 
 # Évaluation courte rejouée par GitHub Actions à chaque modification (scénarios marqués ci: true).
 ci:
