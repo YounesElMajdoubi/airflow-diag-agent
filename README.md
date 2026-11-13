@@ -101,9 +101,9 @@ make eval       # campagne complète (7 configurations) -> MLflow -> tableau ci-
 Interfaces : Airflow http://localhost:8080 (airflow / airflow), MLflow http://localhost:5000,
 serveur MCP http://localhost:8765/mcp (`make inspecteur` ouvre l'inspecteur MCP officiel).
 
-Démo (vidéo) : `make demo` provoque une panne (par défaut U01, `PANNE=P03 make demo` pour une autre),
+Démo : `make demo` provoque une panne (par défaut U01, `PANNE=P03 make demo` pour une autre),
 la laisse en place, puis lance l'agent **en direct** sur Airflow via le serveur MCP. `python -m faults.inject --reset` répare.
-Le déroulé de la vidéo est décrit dans [docs/DEMO.md](docs/DEMO.md).
+Un déroulé de démonstration pas à pas est décrit dans [docs/DEMO.md](docs/DEMO.md).
 
 ## Les briques
 
@@ -134,10 +134,9 @@ Les choix sont expliqués brique par brique dans [docs/GUIDE.md](docs/GUIDE.md),
 
 17 pannes sur 30 doivent être escaladées (politique dans `agent/policy.py`, la même pour la vérité terrain et pour l'agent).
 
-Les instantanés versionnés dans `faults/snapshots/` ont été capturés sur un vrai Airflow 3.3.1 en **mode local
-sans Docker** pendant le développement (`faults/manifest.json`, champ `environnement`). Dans ce mode, P04 est
-invalide : Airflow y tournait en root, qui ignore les droits du dossier. L'injecteur l'a détecté et l'a marqué
-comme tel. `make pannes` recapture les 30 pannes dans la pile Docker, où les tâches ne tournent pas en root.
+Les instantanés versionnés dans `faults/snapshots/` ont été capturés dans la pile Docker, sur Airflow 3.3.1
+(`faults/manifest.json`) : les 30 pannes sont valides (échec réel, sur la tâche attendue). `make pannes`
+les recapture à l'identique.
 
 ## Évaluation : comment lire les chiffres
 

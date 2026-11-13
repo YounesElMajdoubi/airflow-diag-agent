@@ -87,6 +87,24 @@ services:
       <<: *airflow-depends
       airflow-init: {condition: service_completed_successfully}
 
+  # Compte Airflow en LECTURE SEULE du serveur MCP, recréé à chaque démarrage pour suivre le .env.
+  # Passe par l'entrypoint officiel de l'image (commande « bash -c ») : sans lui, Python ne trouve pas Airflow.
+  airflow-users:
+    <<: *airflow-common
+    command:
+      - bash
+      - -c
+      - |
+        airflow users delete --username diag_reader >/dev/null 2>&1 || true
+        airflow users create --role Viewer --username diag_reader --password "$$DIAG_READER_PASSWORD" \
+          --firstname Diag --lastname Reader --email diag_reader@example.org
+    environment:
+      <<: *airflow-env
+      DIAG_READER_PASSWORD: ${AIRFLOW_READER_PASSWORD}
+    depends_on:
+      airflow-apiserver: {condition: service_healthy}
+    restart: "no"
+
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
@@ -155,6 +173,7 @@ services:
     ports: ["8765:8765"]
     depends_on:
       airflow-apiserver: {condition: service_healthy}
+      airflow-users: {condition: service_completed_successfully}
     restart: unless-stopped
 
   litellm:

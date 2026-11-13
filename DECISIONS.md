@@ -178,8 +178,8 @@ qui réessaient sur erreur réseau passagère (injecteur et serveur MCP).
   (`KeyError` qui ressemble à un schéma modifié). Il faudrait ajouter des pannes ambiguës ou composées.
 - Le nom `cobaye_ventes` (« cobaye » = pipeline de test) reste visible par l'agent. Il ne révèle aucune
   panne et le renommer imposerait de tout recapturer : laissé tel quel.
-- Les instantanés versionnés viennent du mode local (chemins `/srv/localenv/...`, hôte `localhost`) ;
-  `make pannes` les remplace par ceux de la pile Docker.
+- Les instantanés versionnés ont été recapturés dans la pile Docker : les 30 pannes sont valides,
+  P04 comprise, puisque les tâches n'y tournent pas en root.
 
 ## Après la première campagne (novembre 2026)
 
@@ -203,4 +203,8 @@ diagnostic et de 0,59 pour la correction. Seule la justesse du diagnostic figure
 - `AIRFLOW_UID` n'était pas transmis à `airflow-init`, qui donnait les volumes au mauvais utilisateur :
   corrigé dans `docker-compose.yml`, et l'injecteur manipule désormais les fichiers en root.
 - Le compte `diag_reader` n'avait pas été créé à l'initialisation, et l'erreur était masquée par un
-  `|| echo`. Il a été créé à la main ; la cause reste à établir.
+  `|| echo`. 🔎 Cause : `init.sh` appelait `airflow` directement, sans passer par l'entrypoint officiel
+  de l'image. En root, Python ne trouvait alors pas le paquet installé dans `/home/airflow/.local`
+  (`ModuleNotFoundError: No module named 'airflow'`). Le compte est désormais créé par le service
+  `airflow-users`, qui passe par l'entrypoint officiel une fois l'api-server prêt, et il est recréé à
+  chaque démarrage pour que son mot de passe suive le `.env`.
