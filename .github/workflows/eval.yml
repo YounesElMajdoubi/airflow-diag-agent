@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Pas de clé DeepSeek -> étape ignorée
         if: env.HAS_KEY != 'true'
-        run: echo "::notice::Secret DEEPSEEK_API_KEY absent (ex. PR depuis un fork) : évaluation courte ignorée."
+        run: echo "::notice::Secret DEEPSEEK_API_KEY absent (ex. PR depuis un fork), évaluation courte ignorée."
       - uses: actions/setup-python@v5
         if: env.HAS_KEY == 'true'
         with:
