@@ -180,3 +180,27 @@ qui réessaient sur erreur réseau passagère (injecteur et serveur MCP).
   panne et le renommer imposerait de tout recapturer : laissé tel quel.
 - Les instantanés versionnés viennent du mode local (chemins `/srv/localenv/...`, hôte `localhost`) ;
   `make pannes` les remplace par ceux de la pile Docker.
+
+## Après la première campagne (novembre 2026)
+
+**R1. DeepSeek seul.** Faute de clé Mistral, seuls `deepseek-v4-pro` (gros) et `deepseek-flash` (petit)
+ont été évalués. Une configuration de routage `routage-deepseek-flash-deepseek-pro` a été ajoutée pour
+comparer quand même les trois stratégies.
+
+**R2. Étiquettes figées malgré des cas discutables.** Après avoir vu les résultats, trois étiquettes
+paraissent discutables : D04 (API qui renvoie une liste vide : la correction touche-t-elle des données ?),
+T02 (verrou sur la table) et la classification de C02 (erreur de code ou schéma modifié ?).
+Les modifier après coup reviendrait à ajuster la vérité terrain pour améliorer les chiffres, comme
+changer de critère de jugement en cours d'étude. Elles restent donc telles quelles. Toute révision de
+la définition se fera avant une nouvelle campagne, qui relancera toutes les configurations.
+
+**R3. Validation du juge.** Accord humain/juge sur 15 diagnostics : kappa pondéré de 0,79 pour le
+diagnostic et de 0,59 pour la correction. Seule la justesse du diagnostic figure dans le tableau.
+
+**R4. 🔎 Problèmes trouvés en déployant sur GitHub Codespaces.**
+- L'image `devcontainers/python:3.12` est passée sur Debian 13 (trixie), où la fonctionnalité
+  docker-in-docker ne s'installe pas : image épinglée sur `3.12-bookworm`.
+- `AIRFLOW_UID` n'était pas transmis à `airflow-init`, qui donnait les volumes au mauvais utilisateur :
+  corrigé dans `docker-compose.yml`, et l'injecteur manipule désormais les fichiers en root.
+- Le compte `diag_reader` n'avait pas été créé à l'initialisation, et l'erreur était masquée par un
+  `|| echo`. Il a été créé à la main ; la cause reste à établir.

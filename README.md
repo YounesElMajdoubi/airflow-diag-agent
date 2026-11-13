@@ -34,12 +34,46 @@ Aucun chiffre n'est écrit à la main.
 | petit | petit-deepseek-flash | 97 % [83–99] | 95 % | 97 % | 0.00330 $ | 18.2 s | 0 | 30 | `c1a2bab4` |
 | routage | routage-deepseek-flash-deepseek-pro | 97 % [83–99] | 95 % | 90 % | 0.00390 $ | 21.7 s | 0 | 30 | `097b85c2` |
 
-_Vérification manuelle du juge : pas encore faite (`make verif-juge`)._
+Vérification manuelle du juge (15 diagnostics notés à l'aveugle) : accord exact 93 %, kappa pondéré 0.79 (run `47b74d74`).
 
 Exactitude : entre crochets, intervalle de confiance à 95 % (Wilson). Avec 30 pannes, deux configurations dont les intervalles se chevauchent largement ne sont pas départagées.
 
-_Tableau généré depuis MLflow le 2026-11-11 01:32 UTC par `eval/make_results_table.py` ; ne pas modifier à la main._
+_Tableau généré depuis MLflow le 2026-11-13 02:05 UTC par `eval/make_results_table.py` ; ne pas modifier à la main._
 <!-- RESULTATS:FIN -->
+
+### Ce que montrent les résultats
+
+- **Le petit modèle fait aussi bien que le gros, pour 5,7 fois moins cher et 2,6 fois plus vite.**
+  `deepseek-flash` atteint la même exactitude que `deepseek-v4-pro` (97 %, 29/30) pour 0,0033 $
+  contre 0,0187 $ par diagnostic, et 18 s contre 47 s. Sur ce jeu, le gros modèle n'apporte rien.
+- **Le routage ne sert à rien ici.** Le petit modèle est presque toujours sûr de lui : le gros
+  n'intervient presque jamais. Le routage coûte donc un peu plus cher que le petit seul, sans gain.
+- **Les écarts de justesse (92–95 %) et d'escalade (90–97 %) ne sont pas significatifs** :
+  ils correspondent à 1 ou 2 pannes sur 30.
+- **La seule erreur de classification est commune aux trois configurations : C02.** Le code utilise
+  `int()` sur des montants décimaux, et l'erreur (`invalid literal for int(): '12.50'`) ressemble à
+  un changement de format des données. Sans savoir que *le code a changé* depuis le dernier run réussi,
+  la panne est ambiguë.
+- **Toutes les erreurs d'escalade viennent du jugement « la correction touche des données »**
+  (D04, S05, T02, C02), jamais de la règle d'escalade elle-même.
+- **Le jeu de test est probablement trop facile** : les trois configurations font 29/30. Il ne permet pas
+  de départager les modèles. Prochaine étape : ajouter des pannes ambiguës ou composées.
+
+### Fiabilité du juge
+
+Vérification humaine à l'aveugle de 15 diagnostics tirés au hasard (graine fixe) :
+
+| Critère | Accord exact | Kappa pondéré (quadratique) | Écart moyen juge − humain |
+|---|---|---|---|
+| Diagnostic | 93 % | 0,79 | −0,07 |
+| Correction | 73 % | 0,59 | 0,00 |
+
+La note de **diagnostic** est fiable (accord substantiel), et le juge est même légèrement plus sévère que
+l'humain. La note de **correction** l'est moins (accord modéré) : elle n'est pas affichée dans le tableau.
+Limites : 15 cas seulement, et le kappa est instable quand la plupart des notes valent 2.
+
+Seuls les modèles DeepSeek ont été évalués : la configuration Mistral est prête dans
+`litellm/config.yaml`, mais elle n'a pas été lancée faute de clé d'API.
 
 Définitions :
 - **Exactitude** : part des 30 pannes classées dans la bonne catégorie (un plantage de l'agent compte comme une erreur).

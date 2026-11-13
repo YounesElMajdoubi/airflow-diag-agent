@@ -1,0 +1,23 @@
+{
+ "configuration": "petit-deepseek-flash",
+ "exactitude": 1.0,
+ "n": 12,
+ "tolerance": 0.0,
+ "scenarios": [
+  "D01",
+  "D04",
+  "S01",
+  "S03",
+  "T01",
+  "T04",
+  "C01",
+  "C03",
+  "U01",
+  "U03",
+  "P01",
+  "P03"
+ ],
+ "instantanes_sha": "6d11f04b5e69",
+ "git_commit": "468c25a",
+ "date": "2026-11-13T02:11:34+00:00"
+}
